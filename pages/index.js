@@ -1,11 +1,20 @@
 import Head from "next/head";
-import Image from "next/image";
 import { Inter } from "@next/font/google";
 import styles from "@/styles/Home.module.css";
+import { fetchCoffeeStoresData } from "../lib/coffee-stores";
+import CoffeeCard from "@/components/coffeeCard";
+import { Stack } from "@mui/material";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default function Home() {
+export async function getStaticProps(context) {
+  const coffeeStores = await fetchCoffeeStoresData();
+  return {
+    props: { coffeeStores }, // will be passed to the page component as props
+  };
+}
+
+export default function Home({ coffeeStores }) {
   return (
     <>
       <Head>
@@ -14,7 +23,29 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}></main>
+      <main className={styles.main}>
+        <Stack
+          direction="row"
+          justifyContent="center"
+          alignItems="center"
+          flexWrap="wrap"
+          spacing={2}
+        >
+          {coffeeStores.map((coffee, i) => {
+            return (
+              <CoffeeCard
+                key={coffee.fsq_id}
+                name={coffee.name}
+                imgUrl={
+                  coffee.imgUrl ||
+                  "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80"
+                }
+                id={coffee.fsq_id}
+              />
+            );
+          })}
+        </Stack>
+      </main>
     </>
   );
 }
