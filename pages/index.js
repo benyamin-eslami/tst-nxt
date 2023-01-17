@@ -4,17 +4,44 @@ import styles from "@/styles/Home.module.css";
 import { fetchCoffeeStoresData } from "../lib/coffee-stores";
 import CoffeeCard from "@/components/coffeeCard";
 import { Stack } from "@mui/material";
+import useLocationTracker from "../hooks/use-location-tracker";
+import { useEffect, useState } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export async function getStaticProps(context) {
-  const coffeeStores = await fetchCoffeeStoresData();
+  const fetchedCoffeeStores = await fetchCoffeeStoresData();
   return {
-    props: { coffeeStores }, // will be passed to the page component as props
+    props: { fetchedCoffeeStores }, // will be passed to the page component as props
   };
 }
 
-export default function Home({ coffeeStores }) {
+export default function Home({ fetchedCoffeeStores }) {
+  let [coffeeStores, setCoffeeStores] = useState([]);
+  const { handleTrackLocation, isFinding, latLong } = useLocationTracker();
+  const getNearLocationHandler = () => {
+    handleTrackLocation();
+  };
+
+  useEffect(() => {
+    const setCoffeeStoresByLocation = async () => {
+      if (latLong) {
+        console.log(latLong);
+        try {
+          const coffeeStoresNearMeResult = await fetchCoffeeStoresData(
+            "coffee",
+            latLong,
+            10
+          );
+          setCoffeeStores(coffeeStoresNearMeResult);
+          console.log(coffeeStoresNearMeResult);
+        } catch {
+          console.log("error");
+        }
+      }
+    };
+    setCoffeeStoresByLocation();
+  }, [latLong]);
   return (
     <>
       <Head>
@@ -24,6 +51,9 @@ export default function Home({ coffeeStores }) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
+        <button onClick={getNearLocationHandler}>
+          {isFinding ? "locating..." : "show nearby coffee"}
+        </button>
         <Stack
           direction="row"
           justifyContent="center"
@@ -31,19 +61,34 @@ export default function Home({ coffeeStores }) {
           flexWrap="wrap"
           spacing={2}
         >
-          {coffeeStores.map((coffee, i) => {
-            return (
-              <CoffeeCard
-                key={coffee.fsq_id}
-                name={coffee.name}
-                imgUrl={
-                  coffee.imgUrl ||
-                  "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80"
-                }
-                id={coffee.fsq_id}
-              />
-            );
-          })}
+          {coffeeStores.length > 0 &&
+            coffeeStores.map((coffee, i) => {
+              return (
+                <CoffeeCard
+                  key={coffee.fsq_id}
+                  name={coffee.name}
+                  imgUrl={
+                    coffee.imgUrl ||
+                    "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80"
+                  }
+                  id={coffee.fsq_id}
+                />
+              );
+            })}
+          {fetchedCoffeeStores.length > 0 &&
+            fetchedCoffeeStores.map((coffee, i) => {
+              return (
+                <CoffeeCard
+                  key={coffee.fsq_id}
+                  name={coffee.name}
+                  imgUrl={
+                    coffee.imgUrl ||
+                    "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80"
+                  }
+                  id={coffee.fsq_id}
+                />
+              );
+            })}
         </Stack>
       </main>
     </>
